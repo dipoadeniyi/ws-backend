@@ -15,26 +15,42 @@ wss.on('connection', (ws) => {
   console.log('Client connected');
 
   ws.on('message', (rawMessage) => {
-    let data;
+    let message;
 
     try {
-      data = JSON.parse(rawMessage.toString());
+      message = JSON.parse(rawMessage.toString());
     } catch (err) {
-      // Ignore non-JSON messages
+      // Ignore invalid JSON
       return;
     }
 
-    // 🔐 HARDENING CHECK (Layer 1)
-    if (data.token !== BUS_SECRET) {
+    // 🔐 HARDENING — Layer 1 token validation
+    if (message.token !== BUS_SECRET) {
       console.warn('❌ Rejected message with invalid token');
       return;
     }
 
-    // Strip token before broadcasting
-    const { token, ...safePayload } = data;
+    // Expecting: { token, type, data }
+    const payload = message.data;
 
-    const outgoing = JSON.stringify(safePayload);
+    if (
+      !payload ||
+      typeof payload.latitude !== 'number' ||
+      typeof payload.longitude !== 'number'
+    ) {
+      // Ignore malformed payloads
+      return;
+    }
 
+    // ✅ FLATTEN PAYLOAD FOR PASSENGER APP
+    const outgoing = JSON.stringify({
+      busId: payload.busId,
+      latitude: payload.latitude,
+      longitude: payload.longitude,
+      timestamp: payload.timestamp,
+    });
+
+    // Broadcast to all connected clients
     wss.clients.forEach((client) => {
       if (client.readyState === WebSocket.OPEN) {
         client.send(outgoing);
