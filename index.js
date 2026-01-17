@@ -54,7 +54,7 @@ wss.on('connection', (ws) => {
       latitude: payload.latitude,
       longitude: payload.longitude,
       timestamp: payload.timestamp,
-      direction,
+      
     });
 
     // --------------------------------------------------
