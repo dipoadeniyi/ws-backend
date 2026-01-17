@@ -48,7 +48,7 @@ wss.on('connection', (ws) => {
       latitude: payload.latitude,
       longitude: payload.longitude,
       timestamp: payload.timestamp,
-      direction,
+    
     });
 
     // Broadcast to all connected clients
