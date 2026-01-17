@@ -9,10 +9,10 @@ if (!BUS_SECRET) {
 
 const wss = new WebSocket.Server({ port: PORT });
 
-console.log(`WebSocket server running on port ${PORT}`);
+console.log(`✅ WebSocket server running on port ${PORT}`);
 
 wss.on('connection', (ws) => {
-  console.log('Client connected');
+  console.log('🔗 Client connected');
 
   ws.on('message', (rawMessage) => {
     let message;
@@ -24,13 +24,17 @@ wss.on('connection', (ws) => {
       return;
     }
 
-    // 🔐 HARDENING — Layer 1 token validation
-    if (message.token !== BUS_SECRET) {
-      console.warn('❌ Rejected message with invalid token');
-      return;
+    // --------------------------------------------------
+    // 🔐 Token validation ONLY for driver messages
+    // --------------------------------------------------
+    if (message.type === 'bus_location') {
+      if (message.token !== BUS_SECRET) {
+        console.warn('❌ Rejected bus message with invalid token');
+        return;
+      }
     }
 
-    // Expecting: { token, type, data }
+    // Expecting driver payload: { token, type, data }
     const payload = message.data;
 
     if (
@@ -42,16 +46,19 @@ wss.on('connection', (ws) => {
       return;
     }
 
+    // --------------------------------------------------
     // ✅ FLATTEN PAYLOAD FOR PASSENGER APP
+    // --------------------------------------------------
     const outgoing = JSON.stringify({
       busId: payload.busId,
       latitude: payload.latitude,
       longitude: payload.longitude,
       timestamp: payload.timestamp,
-    
     });
 
-    // Broadcast to all connected clients
+    // --------------------------------------------------
+    // 📡 Broadcast to all connected clients
+    // --------------------------------------------------
     wss.clients.forEach((client) => {
       if (client.readyState === WebSocket.OPEN) {
         client.send(outgoing);
@@ -60,6 +67,6 @@ wss.on('connection', (ws) => {
   });
 
   ws.on('close', () => {
-    console.log('Client disconnected');
+    console.log('❌ Client disconnected');
   });
 });
