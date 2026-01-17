@@ -54,7 +54,9 @@ wss.on('connection', (ws) => {
       latitude: payload.latitude,
       longitude: payload.longitude,
       timestamp: payload.timestamp,
-      
+
+      // 👇 NEW (SAFE, OPTIONAL FIELD)
+  direction: message.direction || null,
     });
 
     // --------------------------------------------------
